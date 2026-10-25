@@ -102,6 +102,29 @@ public class MomentServiceImpl implements MomentService {
         return client.update(moment);
     }
 
+    @Override
+    public Mono<Stats> updateUpvote(String momentName, Integer upvote) {
+        if (upvote == null || upvote < 0) {
+            return Mono.error(
+                new ServerWebInputException("The upvote count must not be negative."));
+        }
+        String counterName = MeterUtils.nameOf(Moment.class, momentName);
+        return client.fetch(Moment.class, momentName)
+            .switchIfEmpty(Mono.error(new NotFoundException("Moment not found.")))
+            .flatMap(moment -> client.fetch(Counter.class, counterName)
+                .flatMap(counter -> {
+                    counter.setUpvote(upvote);
+                    return client.update(counter);
+                })
+                .switchIfEmpty(Mono.defer(() -> {
+                    Counter counter = Counter.emptyCounter(counterName);
+                    counter.setUpvote(upvote);
+                    return client.create(counter);
+                }))
+            )
+            .map(MomentServiceImpl::toStats);
+    }
+
     private Mono<ListedMoment> toListedMoment(Moment moment) {
         ListedMoment.ListedMomentBuilder momentBuilder = ListedMoment.builder()
             .moment(moment);
@@ -130,13 +153,17 @@ public class MomentServiceImpl implements MomentService {
         Assert.notNull(moment, "The moment must not be null.");
         String name = moment.getMetadata().getName();
         return client.fetch(Counter.class, MeterUtils.nameOf(Moment.class, name))
-            .map(counter -> Stats.builder()
-                .upvote(counter.getUpvote())
-                .totalComment(counter.getTotalComment())
-                .approvedComment(counter.getApprovedComment())
-                .build())
+            .map(MomentServiceImpl::toStats)
             .defaultIfEmpty(Stats.empty());
 
+    }
+
+    private static Stats toStats(Counter counter) {
+        return Stats.builder()
+            .upvote(counter.getUpvote())
+            .totalComment(counter.getTotalComment())
+            .approvedComment(counter.getApprovedComment())
+            .build();
     }
 
     protected Mono<User> getContextUser() {

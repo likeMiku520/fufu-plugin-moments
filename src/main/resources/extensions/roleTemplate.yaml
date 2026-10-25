@@ -35,7 +35,7 @@ rules:
     resources: ["moments"]
     verbs: ["create", "patch", "update", "delete", "deletecollection"]
   - apiGroups: ["console.api.moment.halo.run"]
-    resources: ["moments", "tags"]
+    resources: ["moments", "tags", "moments/upvote"]
     verbs: ["create", "patch", "update", "delete", "deletecollection"]
 ---
 apiVersion: v1alpha1

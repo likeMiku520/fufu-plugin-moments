@@ -151,6 +151,7 @@ const handleApproved = async () => {
             <MomentEdit
               v-if="editing"
               :moment="listedMoment?.moment"
+              :upvote="listedMoment?.stats?.upvote"
               @update="onUpdated"
               @cancel="editing = false"
             ></MomentEdit>

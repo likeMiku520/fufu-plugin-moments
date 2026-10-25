@@ -1,0 +1,47 @@
+.moments-upvote-popover {
+  z-index: 1000;
+  padding: 12px;
+  border: 1px solid #eaecf0;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  font-size: 14px;
+}
+
+.moments-upvote-trigger {
+  color: #39c5bb;
+  &:hover {
+    background: rgb(57 197 187 / 0.1);
+  }
+  &:focus-visible {
+    outline: 2px solid #39c5bb;
+    outline-offset: -2px;
+  }
+}
+
+.moments-upvote-input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border: 1px solid #eaecf0;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+  &:focus {
+    border-color: #39c5bb;
+    outline: none;
+  }
+}
+
+.moments-upvote-error {
+  margin-top: 4px;
+  color: #dc2626;
+  font-size: 12px;
+}
+
+.moments-upvote-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}

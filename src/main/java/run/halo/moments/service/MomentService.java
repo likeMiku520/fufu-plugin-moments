@@ -6,6 +6,7 @@ import run.halo.app.extension.ListResult;
 import run.halo.moments.ListedMoment;
 import run.halo.moments.Moment;
 import run.halo.moments.MomentQuery;
+import run.halo.moments.Stats;
 
 /**
  * Service for {@link run.halo.moments.Moment}.
@@ -27,4 +28,6 @@ public interface MomentService {
     Mono<Moment> updateBy(Moment moment);
 
     Mono<Moment> deleteBy(Moment moment);
+
+    Mono<Stats> updateUpvote(String momentName, Integer upvote);
 }

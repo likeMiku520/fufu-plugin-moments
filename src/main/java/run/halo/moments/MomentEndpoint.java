@@ -92,6 +92,27 @@ public class MomentEndpoint implements CustomEndpoint {
                     .response(responseBuilder()
                         .implementation(Moment.class))
             )
+            .PUT("moments/{name}/upvote", this::updateUpvote,
+                builder -> builder.operationId("UpdateMomentUpvote")
+                    .description("Update the upvote count of a Moment.")
+                    .tag(tag)
+                    .parameter(parameterBuilder()
+                        .name("name")
+                        .in(ParameterIn.PATH)
+                        .description("Moment name")
+                        .required(true)
+                        .implementation(String.class)
+                    )
+                    .requestBody(requestBodyBuilder()
+                        .required(true)
+                        .content(contentBuilder()
+                            .mediaType(MediaType.APPLICATION_JSON_VALUE)
+                            .schema(Builder.schemaBuilder()
+                                .implementation(MomentUpvoteRequest.class))
+                        ))
+                    .response(responseBuilder()
+                        .implementation(Stats.class))
+            )
             .build();
     }
 
@@ -121,6 +142,13 @@ public class MomentEndpoint implements CustomEndpoint {
         MomentQuery query = new MomentQuery(serverRequest.exchange());
         return momentService.listMoment(query)
             .flatMap(listedMoments -> ServerResponse.ok().bodyValue(listedMoments));
+    }
+
+    private Mono<ServerResponse> updateUpvote(ServerRequest serverRequest) {
+        String name = serverRequest.pathVariable("name");
+        return serverRequest.bodyToMono(MomentUpvoteRequest.class)
+            .flatMap(request -> momentService.updateUpvote(name, request.getUpvote()))
+            .flatMap(stats -> ServerResponse.ok().bodyValue(stats));
     }
 
     private Mono<ServerResponse> listMyTags(ServerRequest request) {

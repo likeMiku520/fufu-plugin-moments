@@ -4,12 +4,15 @@ import type { JsonPatchInner, Moment, MomentMedia, MomentMediaTypeEnum } from "@
 import MediaCard from "@/components/MediaCard.vue";
 import ReleaseTimePicker from "@/components/ReleaseTimePicker.vue";
 import { useConsoleTagQueryFetch } from "@/composables/use-tag";
+import "@/styles/upvote-picker.scss";
 import { IconEye, IconEyeOff, Toast, VButton, VLoading } from "@halo-dev/components";
 import type { AttachmentLike } from "@halo-dev/ui-shared";
 import { useQueryClient } from "@tanstack/vue-query";
 import { cloneDeep } from "es-toolkit";
-import { computed, defineAsyncComponent, onMounted, ref, toRaw } from "vue";
+import { PopoverContent, PopoverRoot, PopoverTrigger } from "reka-ui";
+import { computed, defineAsyncComponent, onMounted, ref, toRaw, watch } from "vue";
 import SendMoment from "~icons/ic/sharp-send";
+import TablerHeart from "~icons/tabler/heart";
 import TablerPhoto from "~icons/tabler/photo";
 
 const TextEditor = defineAsyncComponent({
@@ -20,9 +23,11 @@ const TextEditor = defineAsyncComponent({
 const props = withDefaults(
   defineProps<{
     moment?: Moment;
+    upvote?: number;
   }>(),
   {
     moment: undefined,
+    upvote: undefined,
   }
 );
 
@@ -81,6 +86,48 @@ const saving = ref<boolean>(false);
 const attachmentSelectorModal = ref(false);
 const isUpdateMode = computed(() => !!formState.value.metadata.creationTimestamp);
 const isEditorEmpty = ref<boolean>(true);
+
+const originalUpvote = computed(() => props.upvote ?? 0);
+const upvoteCount = ref<number>(0);
+const upvotePopoverOpen = ref<boolean>(false);
+const upvoteDraft = ref<string>("0");
+
+watch(
+  () => props.upvote,
+  (value) => {
+    if (!upvotePopoverOpen.value) {
+      upvoteCount.value = value ?? 0;
+    }
+  },
+  { immediate: true }
+);
+
+const upvoteChanged = computed(() => upvoteCount.value !== originalUpvote.value);
+
+const parsedUpvoteDraft = computed(() => {
+  const value = Number(upvoteDraft.value);
+  return Number.isInteger(value) && value >= 0 ? value : null;
+});
+
+function handleUpvotePopoverOpen(value: boolean) {
+  if (value) {
+    upvoteDraft.value = String(upvoteCount.value);
+  }
+  upvotePopoverOpen.value = value;
+}
+
+function applyUpvoteCount() {
+  if (parsedUpvoteDraft.value === null) {
+    return;
+  }
+  upvoteCount.value = parsedUpvoteDraft.value;
+  upvotePopoverOpen.value = false;
+}
+
+const syncUpvote = async (momentName: string, upvote: number) => {
+  await momentsConsoleApiClient.upvote.updateMomentUpvote(momentName, upvote);
+};
+
 const handlerCreateOrUpdateMoment = async () => {
   if (saveDisable.value) {
     return;
@@ -102,12 +149,18 @@ const handlerCreateOrUpdateMoment = async () => {
 };
 
 const handleSave = async (moment: Moment) => {
+  const upvoteToSync = upvoteCount.value;
   moment.spec.releaseTime = releaseTime.value?.toISOString() ?? new Date().toISOString();
   moment.spec.approved = true;
 
-  await momentsConsoleApiClient.moment.createMoment({
+  const { data: created } = await momentsConsoleApiClient.moment.createMoment({
     moment: moment,
   });
+
+  const createdName = created.metadata.name;
+  if (createdName && upvoteToSync > 0) {
+    await syncUpvote(createdName, upvoteToSync);
+  }
 
   queryClient.invalidateQueries({ queryKey: ["plugin:moments:list"] });
 
@@ -146,6 +199,11 @@ const handleUpdate = async () => {
     jsonPatchInner,
   });
 
+  const momentName = formState.value.metadata.name;
+  if (momentName && upvoteChanged.value) {
+    await syncUpvote(momentName, upvoteCount.value);
+  }
+
   emit("update");
 
   queryClient.invalidateQueries({ queryKey: ["plugin:moments:list"] });
@@ -172,6 +230,7 @@ const handleReset = () => {
   formState.value = toRaw(cloneDeep(initMoment));
   releaseTime.value = null;
   isEditorEmpty.value = true;
+  upvoteCount.value = 0;
 };
 
 const supportImageTypes: string[] = [
@@ -269,6 +328,9 @@ const saveDisable = computed(() => {
       return false;
     }
     if (releaseTimeChanged.value) {
+      return false;
+    }
+    if (upvoteChanged.value) {
       return false;
     }
   }
@@ -377,6 +439,57 @@ function handleKeydown(event: KeyboardEvent) {
       </div>
 
       <div class=":uno: flex flex-wrap items-center justify-end gap-2">
+        <div v-permission="['plugin:moments:manage']" class=":uno: h-fit">
+          <PopoverRoot :open="upvotePopoverOpen" @update:open="handleUpvotePopoverOpen">
+            <PopoverTrigger as-child>
+              <button
+                type="button"
+                class=":uno: moments-upvote-trigger group inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full p-2"
+                :title="`点赞数量：${upvoteCount}`"
+                :aria-label="`修改点赞数量，当前 ${upvoteCount}`"
+              >
+                <TablerHeart class=":uno: size-4 shrink-0" />
+                <span class=":uno: whitespace-nowrap text-xs tabular-nums">{{ upvoteCount }}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              class=":uno: moments-upvote-popover"
+              align="end"
+              :side-offset="6"
+              :collision-padding="8"
+              aria-label="修改点赞数量"
+            >
+              <label class=":uno: text-xs text-gray-600" for="moments-upvote-input">
+                点赞数量
+              </label>
+              <input
+                id="moments-upvote-input"
+                v-model="upvoteDraft"
+                class=":uno: moments-upvote-input"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                @keydown.enter.prevent="applyUpvoteCount"
+              />
+              <p v-if="parsedUpvoteDraft === null" class=":uno: moments-upvote-error" role="alert">
+                请输入不小于 0 的整数
+              </p>
+              <div class=":uno: moments-upvote-actions">
+                <VButton size="sm" @click="upvotePopoverOpen = false">取消</VButton>
+                <VButton
+                  size="sm"
+                  type="secondary"
+                  :disabled="parsedUpvoteDraft === null"
+                  @click="applyUpvoteCount"
+                >
+                  确定
+                </VButton>
+              </div>
+            </PopoverContent>
+          </PopoverRoot>
+        </div>
+
         <ReleaseTimePicker v-model="releaseTime" />
 
         <div
