@@ -6,15 +6,18 @@ import ReleaseTimePicker from "@/components/ReleaseTimePicker.vue";
 import { useConsoleTagQueryFetch } from "@/composables/use-tag";
 import "@/styles/upvote-picker.scss";
 import type { MediaMoveDirection } from "@/types";
-import { IconEye, IconEyeOff, Toast, VButton, VLoading } from "@halo-dev/components";
+import { IconEye, IconEyeOff, Toast, VButton, VDropdown, VDropdownItem, VLoading } from "@halo-dev/components";
 import type { AttachmentLike } from "@halo-dev/ui-shared";
+import type { VueEditor } from "@halo-dev/richtext-editor";
 import { useQueryClient } from "@tanstack/vue-query";
+import type { UseQueryReturnType } from "@tanstack/vue-query";
 import { cloneDeep } from "es-toolkit";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "reka-ui";
-import { computed, defineAsyncComponent, onMounted, ref, toRaw, watch } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref, shallowRef, toRaw, watch } from "vue";
 import SendMoment from "~icons/ic/sharp-send";
 import TablerHeart from "~icons/tabler/heart";
 import TablerPhoto from "~icons/tabler/photo";
+import TablerTag from "~icons/tabler/tag";
 
 const TextEditor = defineAsyncComponent({
   loader: () => import("@/components/TextEditor.vue"),
@@ -396,6 +399,31 @@ const mediaDirections = (index: number): MediaMoveDirection[] => {
   );
 };
 
+const mediaList = computed(() => formState.value.spec.content.medium || []);
+const singlePhoto = computed(
+  () => mediaList.value.length === 1 && mediaList.value[0].type === "PHOTO"
+);
+
+const momentEditor = shallowRef<VueEditor | null>(null);
+
+const handleEditorReady = (editor: VueEditor) => {
+  momentEditor.value = editor;
+};
+
+const handleInsertTag = (tag: string) => {
+  if (!momentEditor.value) {
+    return;
+  }
+  momentEditor.value.chain().focus().setTag(tag).run();
+  queryEditorTags();
+};
+
+const tagKeyword = ref<string | undefined>(undefined);
+const { data: momentTags } = useConsoleTagQueryFetch({ keyword: tagKeyword }) as UseQueryReturnType<
+  string[],
+  unknown
+>;
+
 const handlerCancel = () => {
   emit("cancel");
 };
@@ -461,10 +489,15 @@ function handleKeydown(event: KeyboardEvent) {
       :tag-query-fetch="useConsoleTagQueryFetch"
       class=":uno: min-h-[9rem]"
       tabindex="-1"
+      @ready="handleEditorReady"
       @keydown="handleKeydown"
     />
     <div v-if="formState.spec.content.medium?.length" class=":uno: img-box flex px-3.5 py-2">
-      <ul class=":uno: grid grid-cols-3 w-full gap-1.5 sm:w-1/2" role="list">
+      <ul
+        class=":uno: grid w-full gap-1.5 sm:w-1/2"
+        :class="singlePhoto ? ':uno: grid-cols-1' : ':uno: grid-cols-3'"
+        role="list"
+      >
         <li
           v-for="(media, index) in formState.spec.content.medium"
           :key="media.url"
@@ -473,6 +506,7 @@ function handleKeydown(event: KeyboardEvent) {
           <MediaCard
             :media="media"
             sortable
+            :single="singlePhoto"
             :sorting="sortingMediaIndex === index"
             :directions="mediaDirections(index)"
             @remove="removeMedium"
@@ -483,14 +517,42 @@ function handleKeydown(event: KeyboardEvent) {
       </ul>
     </div>
     <div class=":uno: flex flex-wrap justify-between gap-2 bg-white px-3.5 py-2">
-      <div class=":uno: h-fit">
-        <button
-          type="button"
-          class=":uno: group flex cursor-pointer items-center justify-center rounded-full p-2 hover:bg-sky-600/10"
-          @click="addMediumVerify() && (attachmentSelectorModal = true)"
-        >
-          <TablerPhoto class=":uno: size-full text-base text-gray-600 group-hover:text-sky-600" />
-        </button>
+      <div class=":uno: flex items-center gap-1">
+        <div class=":uno: h-fit">
+          <button
+            type="button"
+            class=":uno: group flex cursor-pointer items-center justify-center rounded-full p-2 hover:bg-sky-600/10"
+            @click="addMediumVerify() && (attachmentSelectorModal = true)"
+          >
+            <TablerPhoto class=":uno: size-full text-base text-gray-600 group-hover:text-sky-600" />
+          </button>
+        </div>
+
+        <div class=":uno: h-fit">
+          <VDropdown>
+            <button
+              type="button"
+              class=":uno: group flex cursor-pointer items-center justify-center rounded-full p-2 disabled:cursor-default hover:bg-sky-600/10 disabled:hover:bg-transparent"
+              :disabled="!momentEditor"
+              v-tooltip="'插入标签'"
+            >
+              <TablerTag
+                class=":uno: size-full text-base text-gray-600 group-hover:text-sky-600"
+                :class="{ ':uno: opacity-50': !momentEditor }"
+              />
+            </button>
+            <template #popper>
+              <div class=":uno: max-h-72 w-52 overflow-y-auto">
+                <template v-if="momentTags && momentTags.length > 0">
+                  <VDropdownItem v-for="tag in momentTags" :key="tag" @click="handleInsertTag(tag)">
+                    {{ tag }}
+                  </VDropdownItem>
+                </template>
+                <div v-else class=":uno: px-3 py-2 text-xs text-gray-500">暂无标签</div>
+              </div>
+            </template>
+          </VDropdown>
+        </div>
       </div>
 
       <div class=":uno: flex flex-wrap items-center justify-end gap-2">

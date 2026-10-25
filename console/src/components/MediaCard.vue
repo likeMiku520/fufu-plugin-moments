@@ -18,11 +18,13 @@ const props = withDefaults(
     sortable?: boolean;
     sorting?: boolean;
     directions?: MediaMoveDirection[];
+    single?: boolean;
   }>(),
   {
     sortable: false,
     sorting: false,
     directions: () => [],
+    single: false,
   }
 );
 
@@ -75,10 +77,10 @@ const getExtname = (type?: string) => {
 <template>
   <div class=":uno: relative overflow-hidden">
     <template v-if="media.type == 'PHOTO'">
-      <div class=":uno: aspect-square">
+      <div :class="single ? ':uno: w-full' : ':uno: aspect-square'">
         <img
-          :src="utils.attachment.getThumbnailUrl(media.url!, 'S')"
-          class=":uno: size-full object-cover"
+          :src="utils.attachment.getThumbnailUrl(media.url!, single ? 'M' : 'S')"
+          :class="single ? ':uno: block h-auto w-full' : ':uno: size-full object-cover'"
           loading="lazy"
         />
       </div>

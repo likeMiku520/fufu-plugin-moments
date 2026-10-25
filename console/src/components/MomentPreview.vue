@@ -63,6 +63,7 @@ const vTag = {
 };
 
 const mediums = ref(props.moment.moment.spec.content.medium || []);
+const singlePhoto = computed(() => mediums.value.length === 1 && mediums.value[0].type === "PHOTO");
 const detailVisible = ref<boolean>(false);
 const selectedIndex = ref<number>(0);
 const selectedMedia = computed(() => {
@@ -158,17 +159,24 @@ defineOptions({
       v-if="!!moment.moment.spec.content.medium && moment.moment.spec.content.medium.length > 0"
       class=":uno: img-box flex pt-2"
     >
-      <ul class=":uno: grid grid-cols-3 w-full gap-1.5 sm:w-1/2 !pl-0" role="list">
+      <ul
+        class=":uno: grid w-full gap-1.5 sm:w-1/2 !pl-0"
+        :class="singlePhoto ? ':uno: grid-cols-1' : ':uno: grid-cols-3'"
+        role="list"
+      >
         <li
           v-for="(media, index) in moment.moment.spec.content.medium"
           :key="index"
           class=":uno: inline-block cursor-pointer overflow-hidden border rounded-md"
         >
-          <div class=":uno: aspect-square" @click="handleClickMedium(index)">
+          <div
+            :class="singlePhoto ? ':uno: w-full' : ':uno: aspect-square'"
+            @click="handleClickMedium(index)"
+          >
             <template v-if="media.type == 'PHOTO'">
               <img
-                :src="utils.attachment.getThumbnailUrl(media.url!, 'S')"
-                class=":uno: size-full object-cover"
+                :src="utils.attachment.getThumbnailUrl(media.url!, singlePhoto ? 'M' : 'S')"
+                :class="singlePhoto ? ':uno: block h-auto w-full' : ':uno: size-full object-cover'"
                 loading="lazy"
               />
             </template>

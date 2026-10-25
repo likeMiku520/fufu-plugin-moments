@@ -33,6 +33,7 @@ const emit = defineEmits<{
   (event: "update:html", value: string): void;
   (event: "update", value: string): void;
   (event: "update:isEmpty", value: boolean | undefined): void;
+  (event: "ready", editor: VueEditor): void;
 }>();
 
 const editor = shallowRef<VueEditor>();
@@ -131,6 +132,9 @@ onMounted(async () => {
     },
     onCreate: () => {
       isInitialized.value = true;
+      if (editor.value) {
+        emit("ready", editor.value);
+      }
     },
   });
 });
