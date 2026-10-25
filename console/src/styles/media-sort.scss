@@ -9,13 +9,10 @@
   border: 0;
   padding: 0;
   background: transparent;
-  color: #39c5bb;
+  color: #374151;
   cursor: pointer;
   font-size: 16px;
   line-height: 1;
-  &:hover {
-    color: #2aa79f;
-  }
 }
 
 .moments-media-arrows {
@@ -43,8 +40,8 @@
   font-size: 14px;
   line-height: 1;
   &:hover:not(:disabled) {
-    background: #39c5bb;
-    color: #ffffff;
+    background: #e5e7eb;
+    color: #111827;
   }
   &:disabled {
     opacity: 0.3;

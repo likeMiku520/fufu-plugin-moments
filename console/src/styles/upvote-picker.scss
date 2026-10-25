@@ -9,17 +9,6 @@
   font-size: 14px;
 }
 
-.moments-upvote-trigger {
-  color: #39c5bb;
-  &:hover {
-    background: rgb(57 197 187 / 0.1);
-  }
-  &:focus-visible {
-    outline: 2px solid #39c5bb;
-    outline-offset: -2px;
-  }
-}
-
 .moments-upvote-input {
   width: 100%;
   margin-top: 8px;
@@ -28,7 +17,7 @@
   border-radius: 4px;
   font-variant-numeric: tabular-nums;
   &:focus {
-    border-color: #39c5bb;
+    border-color: #9ca3af;
     outline: none;
   }
 }

@@ -132,7 +132,7 @@ const handleApproved = async () => {
                     listedMoment?.moment.spec.releaseTime
                   )}`,
                 }"
-                class=":uno: mr-2 flex cursor-default items-center gap-1 text-xs text-primary"
+                class=":uno: mr-2 flex cursor-default items-center gap-1 text-xs text-gray-500"
               >
                 <TablerClock class=":uno: size-3.5" />
                 <span>定时发布</span>

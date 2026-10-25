@@ -499,7 +499,7 @@ function handleKeydown(event: KeyboardEvent) {
             <PopoverTrigger as-child>
               <button
                 type="button"
-                class=":uno: moments-upvote-trigger group inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full p-2"
+                class=":uno: group inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full p-2 text-gray-600 hover:bg-sky-600/10 hover:text-sky-600 focus-visible:outline-sky-600"
                 :title="`点赞数量：${upvoteCount}`"
                 :aria-label="`修改点赞数量，当前 ${upvoteCount}`"
               >

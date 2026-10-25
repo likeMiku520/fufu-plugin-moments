@@ -90,8 +90,7 @@ function reset() {
         type="button"
         :aria-label="label"
         :title="label"
-        class=":uno: moments-date-trigger group inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full p-2 text-gray-600 hover:bg-sky-600/10 hover:text-sky-600 focus-visible:outline-sky-600"
-        :class="{ ':uno: moments-date-trigger--scheduled': scheduled }"
+        class=":uno: group inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full p-2 text-gray-600 hover:bg-sky-600/10 hover:text-sky-600 focus-visible:outline-sky-600"
       >
         <Clock class=":uno: size-4 shrink-0" />
         <span v-if="model" class=":uno: whitespace-nowrap text-xs tabular-nums">{{ label }}</span>
@@ -168,7 +167,7 @@ function reset() {
       <p v-if="!valid" class=":uno: mt-2 text-xs text-red-600" role="alert">
         请选择完整的日期和时间
       </p>
-      <p v-else-if="draftScheduled" class=":uno: moments-date-hint">
+      <p v-else-if="draftScheduled" class=":uno: mt-2 text-xs text-gray-500">
         定时发布：将在 {{ draftLabel }} 自动发布
       </p>
       <div class=":uno: moments-date-actions">
