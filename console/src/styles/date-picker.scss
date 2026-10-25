@@ -125,3 +125,15 @@
   gap: 4px;
   margin-bottom: 12px;
 }
+.moments-date-trigger.moments-date-trigger--scheduled {
+  color: #39c5bb;
+  &:hover {
+    background: rgb(57 197 187 / 0.1);
+    color: #39c5bb;
+  }
+}
+.moments-date-hint {
+  margin-top: 8px;
+  color: #39c5bb;
+  font-size: 12px;
+}

@@ -131,4 +131,15 @@ public class Moment extends AbstractExtension {
     public boolean isPubliclyVisible() {
         return MomentVisible.PUBLIC.equals(this.getSpec().getVisible());
     }
+
+    /**
+     * Indicates whether the release time of the moment has arrived. A moment without release
+     * time is treated as released.
+     *
+     * @return true if the moment can be released to the public
+     */
+    public boolean isReleased() {
+        var releaseTime = this.getSpec().getReleaseTime();
+        return releaseTime == null || !releaseTime.isAfter(Instant.now());
+    }
 }

@@ -8,3 +8,5 @@ export interface MenuItem {
   isActive?: () => boolean;
   children?: MenuItem[];
 }
+
+export type MediaMoveDirection = "up" | "down" | "left" | "right";

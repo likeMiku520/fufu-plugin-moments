@@ -1,0 +1,69 @@
+.moments-media-sort-toggle {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #39c5bb;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  &:hover {
+    color: #2aa79f;
+  }
+}
+
+.moments-media-arrows {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  place-items: center;
+  background: rgb(17 24 39 / 0.35);
+}
+
+.moments-media-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.92);
+  color: #374151;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  &:hover:not(:disabled) {
+    background: #39c5bb;
+    color: #ffffff;
+  }
+  &:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+}
+
+.moments-media-arrow--up {
+  grid-area: 1 / 2;
+}
+
+.moments-media-arrow--left {
+  grid-area: 2 / 1;
+}
+
+.moments-media-arrow--right {
+  grid-area: 2 / 3;
+}
+
+.moments-media-arrow--down {
+  grid-area: 3 / 2;
+}

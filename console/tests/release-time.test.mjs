@@ -63,7 +63,7 @@ test("UC only sends an explicitly changed release time", async () => {
   }
 });
 
-test("picker advances its limit while open and stops when closed", async () => {
+test("picker advances its reference time while open and stops when closed", async () => {
   const scope = effectScope();
   let refresh,
     active = false;
@@ -93,27 +93,31 @@ test("picker advances its limit while open and stops when closed", async () => {
             };
           },
         },
-        "handleOpen, open, draft, maximum, valid, apply"
+        "handleOpen, open, draft, current, valid, draftScheduled, scheduled, apply"
       )
     );
     picker.handleOpen(true);
     await nextTick();
     assert.equal(active, true);
-    // A popup left open for two minutes must accept a time one minute ago.
-    picker.maximum.value = toCalendarDateTime(
+    // A popup left open for two minutes must treat a one-minute-ago time as past.
+    picker.current.value = toCalendarDateTime(
       fromDate(new Date(Date.now() - 120000), getLocalTimeZone())
     );
     picker.draft.value = toCalendarDateTime(
       fromDate(new Date(Date.now() - 60000), getLocalTimeZone())
     );
-    assert.equal(picker.valid.value, false);
+    assert.equal(picker.draftScheduled.value, true);
     refresh();
+    assert.equal(picker.draftScheduled.value, false);
     assert.equal(picker.valid.value, true);
+    // A time in the future is accepted and marks the moment as scheduled.
     picker.draft.value = toCalendarDateTime(
-      fromDate(new Date(Date.now() + 60000), getLocalTimeZone())
+      fromDate(new Date(Date.now() + 3600000), getLocalTimeZone())
     );
+    assert.equal(picker.draftScheduled.value, true);
     picker.apply();
-    assert.equal(model.value, null);
+    assert.notEqual(model.value, null);
+    assert.equal(picker.scheduled.value, true);
     picker.open.value = false;
     await nextTick();
     assert.equal(active, false);

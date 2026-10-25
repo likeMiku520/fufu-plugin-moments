@@ -48,7 +48,7 @@ public class DocumentConverter implements Converter<Moment, Mono<HaloDocument>> 
         haloDoc.setUpdateTimestamp(moment.getSpec().getReleaseTime());
         haloDoc.setCreationTimestamp(moment.getMetadata().getCreationTimestamp());
         haloDoc.setPermalink(getPermalink(moment));
-        haloDoc.setPublished(true);
+        haloDoc.setPublished(moment.isReleased());
 
         return Mono.when(getTitle(moment).doOnNext(haloDoc::setTitle))
             .then(Mono.fromSupplier(() -> haloDoc));

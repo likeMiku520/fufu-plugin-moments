@@ -5,6 +5,7 @@ import MediaCard from "@/components/MediaCard.vue";
 import ReleaseTimePicker from "@/components/ReleaseTimePicker.vue";
 import { useConsoleTagQueryFetch } from "@/composables/use-tag";
 import "@/styles/upvote-picker.scss";
+import type { MediaMoveDirection } from "@/types";
 import { IconEye, IconEyeOff, Toast, VButton, VLoading } from "@halo-dev/components";
 import type { AttachmentLike } from "@halo-dev/ui-shared";
 import { useQueryClient } from "@tanstack/vue-query";
@@ -231,6 +232,7 @@ const handleReset = () => {
   releaseTime.value = null;
   isEditorEmpty.value = true;
   upvoteCount.value = 0;
+  sortingMediaIndex.value = null;
 };
 
 const supportImageTypes: string[] = [
@@ -347,6 +349,51 @@ const removeMedium = (media: MomentMedia) => {
   if (index > -1) {
     formMedium.splice(index, 1);
   }
+  sortingMediaIndex.value = null;
+};
+
+const MEDIA_GRID_COLUMNS = 3;
+const sortingMediaIndex = ref<number | null>(null);
+
+const toggleMediaSorting = (index: number) => {
+  sortingMediaIndex.value = sortingMediaIndex.value === index ? null : index;
+};
+
+const mediaTargetIndex = (index: number, direction: MediaMoveDirection, total: number) => {
+  switch (direction) {
+    case "up":
+      return index - MEDIA_GRID_COLUMNS >= 0 ? index - MEDIA_GRID_COLUMNS : null;
+    case "down":
+      return index + MEDIA_GRID_COLUMNS < total ? index + MEDIA_GRID_COLUMNS : null;
+    case "left":
+      return index > 0 && index % MEDIA_GRID_COLUMNS !== 0 ? index - 1 : null;
+    case "right":
+      return index < total - 1 && (index + 1) % MEDIA_GRID_COLUMNS !== 0 ? index + 1 : null;
+    default:
+      return null;
+  }
+};
+
+const moveMedium = (index: number, direction: MediaMoveDirection) => {
+  const formMedium = formState.value.spec.content.medium;
+  if (!formMedium) {
+    return;
+  }
+  const targetIndex = mediaTargetIndex(index, direction, formMedium.length);
+  if (targetIndex === null) {
+    return;
+  }
+  const current = formMedium[index];
+  formMedium[index] = formMedium[targetIndex];
+  formMedium[targetIndex] = current;
+  sortingMediaIndex.value = targetIndex;
+};
+
+const mediaDirections = (index: number): MediaMoveDirection[] => {
+  const total = formState.value.spec.content.medium?.length || 0;
+  return (["up", "down", "left", "right"] as MediaMoveDirection[]).filter(
+    (direction) => mediaTargetIndex(index, direction, total) !== null
+  );
 };
 
 const handlerCancel = () => {
@@ -420,10 +467,18 @@ function handleKeydown(event: KeyboardEvent) {
       <ul class=":uno: grid grid-cols-3 w-full gap-1.5 sm:w-1/2" role="list">
         <li
           v-for="(media, index) in formState.spec.content.medium"
-          :key="index"
+          :key="media.url"
           class=":uno: inline-block overflow-hidden border rounded-md"
         >
-          <MediaCard :media="media" @remove="removeMedium"></MediaCard>
+          <MediaCard
+            :media="media"
+            sortable
+            :sorting="sortingMediaIndex === index"
+            :directions="mediaDirections(index)"
+            @remove="removeMedium"
+            @toggle-sorting="toggleMediaSorting(index)"
+            @move="(direction) => moveMedium(index, direction)"
+          ></MediaCard>
         </li>
       </ul>
     </div>

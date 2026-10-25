@@ -36,33 +36,38 @@ const model = defineModel<Date | null>({ required: true });
 const zone = getLocalTimeZone();
 const open = ref(false);
 const draft = shallowRef<DateValue>();
-const maximum = shallowRef(toCalendarDateTime(fromDate(new Date(), zone)));
+const current = shallowRef(toCalendarDateTime(fromDate(new Date(), zone)));
 const { pause, resume } = useIntervalFn(
   () => {
-    maximum.value = toCalendarDateTime(fromDate(new Date(), zone));
+    current.value = toCalendarDateTime(fromDate(new Date(), zone));
   },
   1000,
   { immediate: false }
 );
 watch(open, (value) => (value ? resume() : pause()));
-const valid = computed(() => !!draft.value && draft.value.compare(maximum.value) <= 0);
+const valid = computed(() => !!draft.value);
+const draftScheduled = computed(() => !!draft.value && draft.value.compare(current.value) > 0);
+const scheduled = computed(() => !!model.value && model.value.getTime() > Date.now());
+function format(value: DateValue) {
+  const date = toCalendarDateTime(value);
+  return `${date.toString().slice(0, 10)} ${String(date.hour).padStart(2, "0")}:${String(date.minute).padStart(2, "0")}`;
+}
 const label = computed(() => {
   if (!model.value) return "发布时间，默认为当前时间";
-  const date = toCalendarDateTime(fromDate(model.value, zone));
-  return `${date.toString().slice(0, 10)} ${String(date.hour).padStart(2, "0")}:${String(date.minute).padStart(2, "0")}`;
+  const text = format(fromDate(model.value, zone));
+  return scheduled.value ? `定时发布：${text}` : text;
 });
+const draftLabel = computed(() => (draft.value ? format(draft.value) : ""));
 function handleOpen(value: boolean) {
   if (value) {
-    maximum.value = toCalendarDateTime(fromDate(new Date(), zone));
-    draft.value = model.value ? toCalendarDateTime(fromDate(model.value, zone)) : maximum.value;
+    current.value = toCalendarDateTime(fromDate(new Date(), zone));
+    draft.value = model.value ? toCalendarDateTime(fromDate(model.value, zone)) : current.value;
   }
   open.value = value;
 }
 function apply() {
   if (!valid.value || !draft.value) return;
-  const date = draft.value.toDate(zone);
-  if (date.getTime() > Date.now()) return;
-  model.value = date;
+  model.value = draft.value.toDate(zone);
   open.value = false;
 }
 function reset() {
@@ -74,7 +79,6 @@ function reset() {
   <DatePickerRoot
     v-model="draft"
     :open="open"
-    :max-value="maximum"
     locale="zh-CN"
     granularity="minute"
     :hour-cycle="24"
@@ -86,7 +90,8 @@ function reset() {
         type="button"
         :aria-label="label"
         :title="label"
-        class=":uno: group inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full p-2 text-gray-600 hover:bg-sky-600/10 hover:text-sky-600 focus-visible:outline-sky-600"
+        class=":uno: moments-date-trigger group inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full p-2 text-gray-600 hover:bg-sky-600/10 hover:text-sky-600 focus-visible:outline-sky-600"
+        :class="{ ':uno: moments-date-trigger--scheduled': scheduled }"
       >
         <Clock class=":uno: size-4 shrink-0" />
         <span v-if="model" class=":uno: whitespace-nowrap text-xs tabular-nums">{{ label }}</span>
@@ -161,7 +166,10 @@ function reset() {
         </DatePickerField>
       </div>
       <p v-if="!valid" class=":uno: mt-2 text-xs text-red-600" role="alert">
-        请选择不晚于当前时间的完整日期和时间
+        请选择完整的日期和时间
+      </p>
+      <p v-else-if="draftScheduled" class=":uno: moments-date-hint">
+        定时发布：将在 {{ draftLabel }} 自动发布
       </p>
       <div class=":uno: moments-date-actions">
         <button type="button" class=":uno: moments-date-text-button" @click="reset">

@@ -14,6 +14,7 @@ import { utils } from "@halo-dev/ui-shared";
 import { useQueryClient } from "@tanstack/vue-query";
 import { computed, ref } from "vue";
 import LucideMoreHorizontal from "~icons/lucide/more-horizontal";
+import TablerClock from "~icons/tabler/clock";
 import MomentEdit from "./MomentEdit.vue";
 import MomentPreview from "./MomentPreview.vue";
 
@@ -37,6 +38,11 @@ const queryClient = useQueryClient();
 
 const editing = ref(props.editing);
 const owner = computed(() => props.listedMoment?.owner);
+
+const scheduled = computed(() => {
+  const releaseTime = props.listedMoment?.moment.spec.releaseTime;
+  return !!releaseTime && new Date(releaseTime).getTime() > Date.now();
+});
 
 const deleteMoment = () => {
   Dialog.warning({
@@ -119,6 +125,18 @@ const handleApproved = async () => {
             </div>
 
             <div class=":uno: flex items-center">
+              <div
+                v-if="scheduled"
+                v-tooltip="{
+                  content: `定时发布：${utils.date.format(
+                    listedMoment?.moment.spec.releaseTime
+                  )}`,
+                }"
+                class=":uno: mr-2 flex cursor-default items-center gap-1 text-xs text-primary"
+              >
+                <TablerClock class=":uno: size-3.5" />
+                <span>定时发布</span>
+              </div>
               <div class=":uno: mr-2 cursor-default text-xs text-gray-500">
                 <span
                   v-tooltip="{

@@ -1,5 +1,7 @@
 package run.halo.moments.search;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -31,27 +33,47 @@ public class MomentSearchReconciler implements Reconciler<Reconciler.Request> {
 
     @Override
     public Result reconcile(Request request) {
-        client.fetch(Moment.class, request.name()).ifPresent(moment -> {
-            if (ExtensionUtil.isDeleted(moment)) {
-                if (ExtensionUtil.removeFinalizers(moment.getMetadata(), Set.of(FINALIZER))) {
-                    eventPublisher.publishEvent(
-                        new HaloDocumentDeleteRequestEvent(this,
-                            List.of(converter.haloDocId(moment)))
-                    );
-                    client.update(moment);
-                }
-                return;
+        return client.fetch(Moment.class, request.name())
+            .map(this::reconcileMoment)
+            .orElseGet(Result::doNotRetry);
+    }
+
+    private Result reconcileMoment(Moment moment) {
+        if (ExtensionUtil.isDeleted(moment)) {
+            if (ExtensionUtil.removeFinalizers(moment.getMetadata(), Set.of(FINALIZER))) {
+                eventPublisher.publishEvent(
+                    new HaloDocumentDeleteRequestEvent(this,
+                        List.of(converter.haloDocId(moment)))
+                );
+                client.update(moment);
             }
-            ExtensionUtil.addFinalizers(moment.getMetadata(), Set.of(FINALIZER));
+            return Result.doNotRetry();
+        }
+        ExtensionUtil.addFinalizers(moment.getMetadata(), Set.of(FINALIZER));
 
-            var haloDoc = converter.convert(moment)
-                .blockOptional().orElseThrow();
-            eventPublisher.publishEvent(
-                new HaloDocumentAddRequestEvent(this, List.of(haloDoc)));
+        var haloDoc = converter.convert(moment)
+            .blockOptional().orElseThrow();
+        eventPublisher.publishEvent(
+            new HaloDocumentAddRequestEvent(this, List.of(haloDoc)));
 
-            client.update(moment);
-        });
-        return Result.doNotRetry();
+        client.update(moment);
+        return requeueIfNotReleased(moment);
+    }
+
+    /**
+     * Re-indexes the moment when its release time arrives, otherwise the document would stay
+     * unpublished in the search index.
+     *
+     * @param moment the moment to check
+     * @return the reconcile result
+     */
+    static Result requeueIfNotReleased(Moment moment) {
+        var releaseTime = moment.getSpec().getReleaseTime();
+        var now = Instant.now();
+        if (releaseTime == null || !releaseTime.isAfter(now)) {
+            return Result.doNotRetry();
+        }
+        return Result.requeue(Duration.between(now, releaseTime));
     }
 
     @Override
