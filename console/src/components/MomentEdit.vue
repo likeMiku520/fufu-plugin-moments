@@ -419,10 +419,9 @@ const handleInsertTag = (tag: string) => {
 };
 
 const tagKeyword = ref<string | undefined>(undefined);
-const { data: momentTags } = useConsoleTagQueryFetch({ keyword: tagKeyword }) as UseQueryReturnType<
-  string[],
-  unknown
->;
+const { data: momentTags, refetch: refetchTags } = useConsoleTagQueryFetch({
+  keyword: tagKeyword,
+}) as UseQueryReturnType<string[], unknown>;
 
 const handlerCancel = () => {
   emit("cancel");
@@ -529,7 +528,7 @@ function handleKeydown(event: KeyboardEvent) {
         </div>
 
         <div class=":uno: h-fit">
-          <VDropdown>
+          <VDropdown @show="refetchTags()">
             <button
               type="button"
               class=":uno: group flex cursor-pointer items-center justify-center rounded-full p-2 disabled:cursor-default hover:bg-sky-600/10 disabled:hover:bg-transparent"

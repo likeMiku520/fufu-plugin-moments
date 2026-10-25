@@ -58,7 +58,7 @@ Halo 2.0 的瞬间管理插件，提供一个轻量级的内容发布功能，�
 
 ## 版本说明
 
-- 最新版本：[v1.3.0](https://github.com/likeMiku520/fufu-plugin-moments/releases/tag/v1.3.0) — 新增标签快速插入，单张图片按原图比例展示，并包含此前的定时发布、图片顺序调整、自定义点赞数量。
+- 最新版本：[v1.3.1](https://github.com/likeMiku520/fufu-plugin-moments/releases/tag/v1.3.1) — 修复标签列表不完整（后台标签现在覆盖全部作者的瞬间），并包含标签快速插入、单图按原图比例展示、定时发布、图片顺序调整、自定义点赞数量。
 - 历史版本与每个版本的更新内容见 [Releases](https://github.com/likeMiku520/fufu-plugin-moments/releases)。
 
 ## MCP Server 集成
